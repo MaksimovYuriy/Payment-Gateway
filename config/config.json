@@ -14,5 +14,8 @@
         "password": "payment_gateway",
         "name": "payment_gateway",
         "ssl_mode": "disable"
+    },
+    "app": {
+        "env": "dev"
     }
 }

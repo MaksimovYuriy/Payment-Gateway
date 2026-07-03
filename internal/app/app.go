@@ -1,19 +1,19 @@
 package app
 
 import (
-	"fmt"
 	"log"
 	"payment_gateway/internal/config"
+	"payment_gateway/internal/lib/sl"
 )
 
 func Run() error {
 	cfg, err := config.Load(config.ConfigPath)
 	if err != nil {
-		log.Fatal("Config error: %w", err)
+		log.Fatal(err)
 	}
-	fmt.Println(cfg.DB.Host)
 
-	// Логгирование
+	logger := sl.New(cfg.APP.Env)
+	logger.Info("Info")
 
 	// БД
 

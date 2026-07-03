@@ -11,6 +11,7 @@ const ConfigPath = "./config/config.json"
 type Config struct {
 	HTTP HTTPConfig `json:"http" env-prefix:"HTTP_"`
 	DB   DBConfig   `json:"db" env-prefix:"DB_"`
+	APP  AppConfig  `json:"app" env-prefix"APP_"`
 }
 
 type HTTPConfig struct {
@@ -29,6 +30,10 @@ type DBConfig struct {
 	Password string `json:"password" env:"PASSWORD"`
 	Name     string `json:"name" env:"NAME" env-default:"payment_gateway"`
 	SSLMode  string `json:"ssl_mode" env:"SSL_MODE" env-default:"disable"`
+}
+
+type AppConfig struct {
+	Env string `json:"env" env:"ENV" env-default:"prod"`
 }
 
 func Load(path string) (*Config, error) {
