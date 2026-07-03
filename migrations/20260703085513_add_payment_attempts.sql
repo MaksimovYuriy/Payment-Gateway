@@ -7,8 +7,8 @@ CREATE TABLE payment_attempts (
     external_payment_id VARCHAR(255),
     error_message TEXT,
     error_code VARCHAR(50),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT chk_payment_attempts_status 
     CHECK (status IN ('created', 'processing', 'succeeded', 'failed', 'timeout', 'cancelled'))
