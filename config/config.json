@@ -1,0 +1,18 @@
+{
+    "http": {
+        "port": "8081",
+        "address": "localhost",
+        "read_timeout": null,
+        "write_timeout": null,
+        "read_header_timeout": null,
+        "idle_timeout": null
+    },
+    "db": {
+        "host": "localhost",
+        "port": "5434",
+        "user": "payment_gateway",
+        "password": "payment_gateway",
+        "name": "payment_gateway",
+        "ssl_mode": "disable"
+    }
+}
