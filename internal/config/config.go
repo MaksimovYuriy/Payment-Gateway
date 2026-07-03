@@ -11,7 +11,7 @@ const ConfigPath = "./config/config.json"
 type Config struct {
 	HTTP HTTPConfig `json:"http" env-prefix:"HTTP_"`
 	DB   DBConfig   `json:"db" env-prefix:"DB_"`
-	APP  AppConfig  `json:"app" env-prefix"APP_"`
+	App  AppConfig  `json:"app" env-prefix:"APP_"`
 }
 
 type HTTPConfig struct {
