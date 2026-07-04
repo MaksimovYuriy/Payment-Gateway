@@ -2,7 +2,8 @@ DB_URL=postgres://payment_gateway:payment_gateway@localhost:5434/payment_gateway
 MIGRATIONS_DIR=./migrations
 
 build-up:
-	docker compose up -d --build 
+	docker compose up -d --build;
+	go run ./cmd/api
 
 migrate-up:
 	GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DB_URL) GOOSE_MIGRATION_DIR=$(MIGRATIONS_DIR) goose up
