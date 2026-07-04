@@ -7,10 +7,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func NewRouter() http.Handler {
+func NewRouter(bankController *BankController) http.Handler {
 	r := chi.NewRouter()
 
 	r.Get("/health", healthHandler)
+
+	r.Post("/admin/banks", bankController.Registration)
+	r.Get("/admin/banks", bankController.List)
+
 	return r
 }
 

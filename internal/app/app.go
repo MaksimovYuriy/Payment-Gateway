@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log/slog"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -12,7 +12,9 @@ import (
 	"payment_gateway/internal/config"
 	"payment_gateway/internal/controller/restapi"
 	"payment_gateway/internal/lib/sl"
+	bankrepo "payment_gateway/internal/repo/bank"
 	"payment_gateway/internal/storage/postgres"
+	bankusecase "payment_gateway/internal/usecase/bank"
 )
 
 func Run() error {
@@ -34,13 +36,17 @@ func Run() error {
 	defer database.Close()
 	logger.Info("Database connection started")
 
-	router := restapi.NewRouter()
+	bankRepo := bankrepo.NewBankRepo(database)
+	bankUseCase := bankusecase.NewUseCase(bankRepo)
+	bankController := restapi.NewBankController(bankUseCase)
+
+	router := restapi.NewRouter(bankController)
 	server := restapi.NewServer(cfg.HTTP, router)
 
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		logger.Info(fmt.Sprintf("Server started on %s", cfg.HTTP.Port))
+		logger.Info("Server started", slog.String("addr", server.Addr))
 		serverErrors <- server.ListenAndServe()
 	}()
 
@@ -60,6 +66,8 @@ func Run() error {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		return err
 	}
+
+	logger.Info("Payment-Gateway stopped")
 
 	return nil
 }
