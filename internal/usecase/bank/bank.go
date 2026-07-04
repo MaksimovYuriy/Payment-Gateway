@@ -9,12 +9,12 @@ import (
 )
 
 type UseCase struct {
-	bankRepo repo.BankRepo
+	bankRepo repo.Bank
 }
 
 var _ usecase.Bank = (*UseCase)(nil)
 
-func NewUseCase(br repo.BankRepo) *UseCase {
+func NewUseCase(br repo.Bank) *UseCase {
 	return &UseCase{
 		bankRepo: br,
 	}

@@ -13,8 +13,10 @@ import (
 	"payment_gateway/internal/controller/restapi"
 	"payment_gateway/internal/lib/sl"
 	bankrepo "payment_gateway/internal/repo/bank"
+	merchantrepo "payment_gateway/internal/repo/merchant"
 	"payment_gateway/internal/storage/postgres"
 	bankusecase "payment_gateway/internal/usecase/bank"
+	merchusecase "payment_gateway/internal/usecase/merchant"
 )
 
 func Run() error {
@@ -36,11 +38,16 @@ func Run() error {
 	defer database.Close()
 	logger.Info("Database connection started")
 
-	bankRepo := bankrepo.NewBankRepo(database)
-	bankUseCase := bankusecase.NewUseCase(bankRepo)
-	bankController := restapi.NewBankController(bankUseCase)
+	bankRepo := bankrepo.NewRepo(database)
+	merchRepo := merchantrepo.NewRepo(database)
 
-	router := restapi.NewRouter(bankController)
+	bankUseCase := bankusecase.NewUseCase(bankRepo)
+	merchUseCase := merchusecase.NewUseCase(merchRepo)
+
+	bankController := restapi.NewBankController(bankUseCase)
+	merchController := restapi.NewMerchantController(merchUseCase)
+
+	router := restapi.NewRouter(bankController, merchController)
 	server := restapi.NewServer(cfg.HTTP, router)
 
 	serverErrors := make(chan error, 1)

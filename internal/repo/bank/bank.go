@@ -11,9 +11,9 @@ type Repo struct {
 	database *sql.DB
 }
 
-var _ repo.BankRepo = (*Repo)(nil)
+var _ repo.Bank = (*Repo)(nil)
 
-func NewBankRepo(db *sql.DB) *Repo {
+func NewRepo(db *sql.DB) *Repo {
 	return &Repo{database: db}
 }
 
