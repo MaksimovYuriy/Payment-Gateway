@@ -9,7 +9,8 @@ import (
 
 func NewRouter(
 	bankController *BankController,
-	merchantsController *MerchantController) http.Handler {
+	merchantsController *MerchantController,
+	paymentController *PaymentController) http.Handler {
 
 	r := chi.NewRouter()
 
@@ -20,6 +21,10 @@ func NewRouter(
 
 	r.Post("/admin/merchants", merchantsController.Registration)
 	r.Get("/admin/merchants", merchantsController.List)
+
+	r.Post("/payments", paymentController.Create)
+	r.Get("/payments", paymentController.List)
+	r.Get("/payments/{id}", paymentController.GetById)
 
 	return r
 }

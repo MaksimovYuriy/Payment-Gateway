@@ -21,15 +21,15 @@ func (r *Repo) Create(ctx context.Context, p *entity.Payment) error {
 	query := `
 		INSERT INTO payments (
 								merchant_id, order_id, amount,
-								currency, created_at, updated_at 
+								currency
 							 )
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, status
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, status, created_at, updated_at
 	`
 	row := r.database.QueryRowContext(ctx, query, p.MerchantId, p.OrderId, p.Amount,
-		p.Currency, p.CreatedAt, p.UpdatedAt)
+		p.Currency)
 
-	if err := row.Scan(&p.Id, &p.Status); err != nil {
+	if err := row.Scan(&p.Id, &p.Status, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return err
 	}
 	return nil
