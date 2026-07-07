@@ -17,7 +17,7 @@ type (
 	}
 
 	Payment interface {
-		Create(ctx context.Context, p *entity.Payment, bank_id int64) (*entity.Payment, error)
+		Create(ctx context.Context, p *entity.Payment, bankId int64) (*entity.Payment, error)
 		GetById(ctx context.Context, id int64) (*entity.Payment, error)
 		List(ctx context.Context) ([]*entity.Payment, error)
 	}
