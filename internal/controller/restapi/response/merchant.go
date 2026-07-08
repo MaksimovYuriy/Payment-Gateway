@@ -22,6 +22,11 @@ type ListMerchant struct {
 	Merchants []Merchant `json:"merchants"`
 }
 
+type MerchantRegistration struct {
+	Merchant Merchant `json:"merchant"`
+	ApiKey   string   `json:"api_key"`
+}
+
 func NewMerchant(merchant entity.Merchant) Merchant {
 	return Merchant{
 		Id:                 merchant.Id,
@@ -43,4 +48,11 @@ func NewListMerchant(merchants []*entity.Merchant) ListMerchant {
 	}
 
 	return ListMerchant{Merchants: list}
+}
+
+func NewMerchantRegistration(merchant entity.Merchant, apiKey string) MerchantRegistration {
+	return MerchantRegistration{
+		Merchant: NewMerchant(merchant),
+		ApiKey:   apiKey,
+	}
 }

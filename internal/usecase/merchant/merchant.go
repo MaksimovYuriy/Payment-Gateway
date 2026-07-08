@@ -3,6 +3,7 @@ package merchant
 import (
 	"context"
 	"payment_gateway/internal/entity"
+	apikey "payment_gateway/internal/lib/api_key"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
 	"time"
@@ -18,17 +19,24 @@ func NewUseCase(repo repo.Merchant) *UseCase {
 
 var _ usecase.Merchant = (*UseCase)(nil)
 
-func (uc *UseCase) Registration(ctx context.Context, m *entity.Merchant) (*entity.Merchant, error) {
+func (uc *UseCase) Registration(ctx context.Context, m *entity.Merchant) (*entity.Merchant, string, error) {
 	now := time.Now()
 	m.CreatedAt = now
 	m.UpdatedAt = now
 
-	m.ApiKeyHash = "###" + m.Domain // Some service for generation api keys
+	apiKey, err := apikey.GenerateApiKey()
+	if err != nil {
+		return nil, "", err
+	}
+	m.ApiKeyHash, err = apikey.HashApiKey(apiKey)
+	if err != nil {
+		return nil, "", err
+	}
 
 	if err := uc.merchantRepo.Create(ctx, m); err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	return m, nil
+	return m, apiKey, nil
 }
 
 func (uc *UseCase) List(ctx context.Context) ([]*entity.Merchant, error) {

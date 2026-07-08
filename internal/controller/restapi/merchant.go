@@ -33,7 +33,7 @@ func (mc *MerchantController) Registration(w http.ResponseWriter, r *http.Reques
 		IsActive:           req.IsActive,
 	}
 
-	merchant, err := mc.usecase.Registration(r.Context(), &merchant_entity)
+	merchant, apiKey, err := mc.usecase.Registration(r.Context(), &merchant_entity)
 	if err != nil {
 		http.Error(w, "error", http.StatusBadRequest)
 		return
@@ -41,7 +41,7 @@ func (mc *MerchantController) Registration(w http.ResponseWriter, r *http.Reques
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response.NewMerchant(*merchant))
+	json.NewEncoder(w).Encode(response.NewMerchantRegistration(*merchant, apiKey))
 }
 
 func (mc *MerchantController) List(w http.ResponseWriter, r *http.Request) {

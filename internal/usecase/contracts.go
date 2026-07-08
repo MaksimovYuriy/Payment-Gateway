@@ -12,7 +12,7 @@ type (
 	}
 
 	Merchant interface {
-		Registration(ctx context.Context, m *entity.Merchant) (*entity.Merchant, error)
+		Registration(ctx context.Context, m *entity.Merchant) (*entity.Merchant, string, error)
 		List(ctx context.Context) ([]*entity.Merchant, error)
 	}
 
