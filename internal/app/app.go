@@ -44,6 +44,8 @@ func Run() error {
 
 	bankProcessor := bankprocessor.NewMockProcessor(3 * time.Second)
 
+	paymentUOW := postgres.NewUnitOfWork(database)
+
 	bankRepo := bankrepo.NewRepo(database)
 	merchRepo := merchantrepo.NewRepo(database)
 	paymentRepo := paymentrepo.NewRepo(database)
@@ -51,7 +53,7 @@ func Run() error {
 
 	bankUseCase := bankusecase.NewUseCase(bankRepo)
 	merchUseCase := merchusecase.NewUseCase(merchRepo)
-	paymentUseCase := paymentusecase.NewUseCase(paymentRepo, pAttemptRepo, bankProcessor)
+	paymentUseCase := paymentusecase.NewUseCase(paymentRepo, pAttemptRepo, bankProcessor, paymentUOW)
 
 	bankController := restapi.NewBankController(bankUseCase)
 	merchController := restapi.NewMerchantController(merchUseCase)

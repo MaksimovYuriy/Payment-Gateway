@@ -7,11 +7,16 @@ import (
 	"payment_gateway/internal/repo"
 )
 
-type Repo struct {
-	database *sql.DB
+type executor interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
-func NewRepo(db *sql.DB) *Repo {
+type Repo struct {
+	database executor
+}
+
+func NewRepo(db executor) *Repo {
 	return &Repo{database: db}
 }
 

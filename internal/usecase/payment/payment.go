@@ -13,42 +13,49 @@ type UseCase struct {
 	paymentRepo   repo.Payment
 	pAttemptRepo  repo.PaymentAttempt
 	bankProcessor bankprocessor.BankProcessor
+	uow           UnitOfWork
 }
 
 func NewUseCase(
 	paymentRepo repo.Payment,
 	pAttemptRepo repo.PaymentAttempt,
 	bankProcessor bankprocessor.BankProcessor,
+	uow UnitOfWork,
 ) *UseCase {
 	return &UseCase{
 		paymentRepo:   paymentRepo,
 		pAttemptRepo:  pAttemptRepo,
 		bankProcessor: bankProcessor,
+		uow:           uow,
 	}
 }
 
 var _ usecase.Payment = (*UseCase)(nil)
 
 func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) (*entity.Payment, error) {
-	if err := uc.paymentRepo.Create(ctx, p); err != nil {
-		return nil, err
-	}
+	var attempt entity.PaymentAttempt
+	err := uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
+		if err := repos.Payment.Create(ctx, p); err != nil {
+			return err
+		}
 
-	p.Status = entity.PaymentStatusProcessing
-	if err := uc.paymentRepo.Update(ctx, p); err != nil {
-		return nil, err
-	}
+		p.Status = entity.PaymentStatusProcessing
+		if err := repos.Payment.Update(ctx, p); err != nil {
+			return err
+		}
 
-	attempt := entity.PaymentAttempt{
-		PaymentId: p.Id,
-		BankId:    bankId,
-	}
-	if err := uc.pAttemptRepo.Create(ctx, &attempt); err != nil {
-		return nil, err
-	}
+		attempt = entity.PaymentAttempt{
+			PaymentId: p.Id,
+			BankId:    bankId,
+		}
+		if err := repos.PaymentAttempt.Create(ctx, &attempt); err != nil {
+			return err
+		}
+		attempt.Status = entity.PAttemptStatusProcessing
+		return repos.PaymentAttempt.Update(ctx, &attempt)
+	})
 
-	attempt.Status = entity.PAttemptStatusProcessing
-	if err := uc.pAttemptRepo.Update(ctx, &attempt); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -71,10 +78,14 @@ func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) 
 		return nil, ctx.Err()
 	}
 
-	if err := uc.pAttemptRepo.Update(ctx, &attempt); err != nil {
-		return nil, err
-	}
-	if err := uc.paymentRepo.Update(ctx, p); err != nil {
+	err = uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
+		if err := repos.PaymentAttempt.Update(ctx, &attempt); err != nil {
+			return err
+		}
+
+		return repos.Payment.Update(ctx, p)
+	})
+	if err != nil {
 		return nil, err
 	}
 
