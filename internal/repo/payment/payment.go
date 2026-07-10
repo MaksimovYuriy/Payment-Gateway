@@ -3,7 +3,9 @@ package payment
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
 )
 
@@ -35,7 +37,16 @@ func (r *Repo) Create(ctx context.Context, p *entity.Payment) error {
 		p.Currency)
 
 	if err := row.Scan(&p.Id, &p.Status, &p.CreatedAt, &p.UpdatedAt); err != nil {
-		return err
+		if repo.IsUniqueViolation(err) {
+			return apperr.AlreadyExists("payment already exists")
+		}
+		if repo.IsForeignKeyViolation(err) {
+			return apperr.InvalidInput("merchant not found")
+		}
+		if repo.IsCheckViolation(err) {
+			return apperr.InvalidInput(apperr.MessageInvalidInput)
+		}
+		return apperr.Internal("failed to create payment", err)
 	}
 	return nil
 }
@@ -50,7 +61,16 @@ func (r *Repo) Update(ctx context.Context, p *entity.Payment) error {
 
 	row := r.database.QueryRowContext(ctx, query, p.SuccessBankId, p.Status, p.Id)
 	if err := row.Scan(&p.UpdatedAt); err != nil {
-		return err
+		if errors.Is(err, sql.ErrNoRows) {
+			return apperr.NotFound("payment not found")
+		}
+		if repo.IsForeignKeyViolation(err) {
+			return apperr.InvalidInput("bank not found")
+		}
+		if repo.IsCheckViolation(err) {
+			return apperr.InvalidInput(apperr.MessageInvalidInput)
+		}
+		return apperr.Internal("failed to update payment", err)
 	}
 	return nil
 }
@@ -75,7 +95,10 @@ func (r *Repo) GetById(ctx context.Context, id int64) (*entity.Payment, error) {
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperr.NotFound("payment not found")
+		}
+		return nil, apperr.Internal("failed to get payment", err)
 	}
 	return &payment, nil
 }
@@ -88,7 +111,7 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Payment, error) {
 	`
 	rows, err := r.database.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, apperr.Internal("failed to list payments", err)
 	}
 	defer rows.Close()
 	payments := make([]*entity.Payment, 0)
@@ -105,12 +128,12 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Payment, error) {
 			&payment.CreatedAt,
 			&payment.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, apperr.Internal("failed to scan payment", err)
 		}
 		payments = append(payments, &payment)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, apperr.Internal("failed to iterate payments", err)
 	}
 	return payments, nil
 }

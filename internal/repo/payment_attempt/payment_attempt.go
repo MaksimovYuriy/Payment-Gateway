@@ -3,7 +3,9 @@ package paymentattempt
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
 )
 
@@ -29,7 +31,13 @@ func (r *Repo) Create(ctx context.Context, pa *entity.PaymentAttempt) error {
 	`
 	row := r.database.QueryRowContext(ctx, query, pa.PaymentId, pa.BankId)
 	if err := row.Scan(&pa.Id, &pa.Status, &pa.CreatedAt, &pa.UpdatedAt); err != nil {
-		return err
+		if repo.IsForeignKeyViolation(err) {
+			return apperr.InvalidInput("payment or bank not found")
+		}
+		if repo.IsCheckViolation(err) {
+			return apperr.InvalidInput(apperr.MessageInvalidInput)
+		}
+		return apperr.Internal("failed to create payment attempt", err)
 	}
 	return nil
 }
@@ -43,7 +51,13 @@ func (r *Repo) Update(ctx context.Context, pa *entity.PaymentAttempt) error {
 	`
 	row := r.database.QueryRowContext(ctx, query, pa.Status, pa.ExternalPaymentId, pa.ErrorMessage, pa.ErrorCode, pa.Id)
 	if err := row.Scan(&pa.UpdatedAt); err != nil {
-		return err
+		if errors.Is(err, sql.ErrNoRows) {
+			return apperr.NotFound("payment attempt not found")
+		}
+		if repo.IsCheckViolation(err) {
+			return apperr.InvalidInput(apperr.MessageInvalidInput)
+		}
+		return apperr.Internal("failed to update payment attempt", err)
 	}
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
 )
 
@@ -33,7 +34,10 @@ func (r *Repo) Create(ctx context.Context, m *entity.Merchant) error {
 	)
 
 	if err := row.Scan(&m.Id, &m.CreatedAt, &m.UpdatedAt); err != nil {
-		return err
+		if repo.IsUniqueViolation(err) {
+			return apperr.AlreadyExists("merchant already exists")
+		}
+		return apperr.Internal("failed to create merchant", err)
 	}
 	return nil
 }
@@ -48,7 +52,7 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Merchant, error) {
 	`
 	rows, err := r.database.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, apperr.Internal("failed to list merchants", err)
 	}
 	defer rows.Close()
 
@@ -67,13 +71,13 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Merchant, error) {
 			&merchant.UpdatedAt,
 		)
 		if err != nil {
-			return nil, err
+			return nil, apperr.Internal("failed to scan merchant", err)
 		}
 		merchants = append(merchants, &merchant)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, apperr.Internal("failed to iterate merchants", err)
 	}
 	return merchants, nil
 }

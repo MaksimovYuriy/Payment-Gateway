@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
 )
 
@@ -20,14 +21,17 @@ func NewRepo(db *sql.DB) *Repo {
 func (r *Repo) Create(ctx context.Context, b *entity.Bank) error {
 	const query = `
 		INSERT INTO banks (code, name, is_active)
-		VALUES ($1, $2, $3, $4, $5)
+		VALUES ($1, $2, $3)
 		RETURNING id, created_at, updated_at
 	`
 	err := r.database.QueryRowContext(
 		ctx, query, b.Code, b.Name, b.IsActive,
 	).Scan(&b.Id, &b.CreatedAt, &b.UpdatedAt)
 	if err != nil {
-		return err
+		if repo.IsUniqueViolation(err) {
+			return apperr.AlreadyExists("bank already exists")
+		}
+		return apperr.Internal("failed to create bank", err)
 	}
 	return nil
 }
@@ -39,7 +43,7 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Bank, error) {
 	`
 	rows, err := r.database.QueryContext(ctx, query)
 	if err != nil {
-		return nil, err
+		return nil, apperr.Internal("failed to list banks", err)
 	}
 	defer rows.Close()
 
@@ -54,12 +58,12 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Bank, error) {
 			&bank.CreatedAt,
 			&bank.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, apperr.Internal("failed to scan bank", err)
 		}
 		banks = append(banks, &bank)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, apperr.Internal("failed to iterate banks", err)
 	}
 	return banks, nil
 }
