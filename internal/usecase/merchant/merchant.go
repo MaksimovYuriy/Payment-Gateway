@@ -3,7 +3,7 @@ package merchant
 import (
 	"context"
 	"payment_gateway/internal/entity"
-	apikey "payment_gateway/internal/lib/api_key"
+	"payment_gateway/internal/lib/apikey"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
 	"time"

@@ -7,19 +7,26 @@ import (
 	"payment_gateway/internal/controller/restapi/response"
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/usecase/merchant"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type MerchantController struct {
-	usecase *merchant.UseCase
+	usecase  *merchant.UseCase
+	validate *validator.Validate
 }
 
-func NewMerchantController(uc *merchant.UseCase) *MerchantController {
-	return &MerchantController{usecase: uc}
+func NewMerchantController(uc *merchant.UseCase, vd *validator.Validate) *MerchantController {
+	return &MerchantController{usecase: uc, validate: vd}
 }
 
 func (mc *MerchantController) Registration(w http.ResponseWriter, r *http.Request) {
 	var req request.RegistrationMerchant
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "error", http.StatusBadRequest)
+		return
+	}
+	if err := mc.validate.Struct(req); err != nil {
 		http.Error(w, "error", http.StatusBadRequest)
 		return
 	}

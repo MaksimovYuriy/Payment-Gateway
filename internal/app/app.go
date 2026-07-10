@@ -21,6 +21,8 @@ import (
 	bankusecase "payment_gateway/internal/usecase/bank"
 	merchusecase "payment_gateway/internal/usecase/merchant"
 	paymentusecase "payment_gateway/internal/usecase/payment"
+
+	"github.com/go-playground/validator/v10"
 )
 
 func Run() error {
@@ -42,6 +44,8 @@ func Run() error {
 	defer database.Close()
 	logger.Info("Database connection started")
 
+	validate := validator.New()
+
 	bankProcessor := bankprocessor.NewMockProcessor(3 * time.Second)
 
 	paymentUOW := postgres.NewUnitOfWork(database)
@@ -55,9 +59,9 @@ func Run() error {
 	merchUseCase := merchusecase.NewUseCase(merchRepo)
 	paymentUseCase := paymentusecase.NewUseCase(paymentRepo, pAttemptRepo, bankProcessor, paymentUOW)
 
-	bankController := restapi.NewBankController(bankUseCase)
-	merchController := restapi.NewMerchantController(merchUseCase)
-	paymentController := restapi.NewPaymentController(paymentUseCase)
+	bankController := restapi.NewBankController(bankUseCase, validate)
+	merchController := restapi.NewMerchantController(merchUseCase, validate)
+	paymentController := restapi.NewPaymentController(paymentUseCase, validate)
 
 	router := restapi.NewRouter(bankController, merchController, paymentController)
 	server := restapi.NewServer(cfg.HTTP, router)

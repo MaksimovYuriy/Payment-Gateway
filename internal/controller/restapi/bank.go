@@ -7,19 +7,26 @@ import (
 	"payment_gateway/internal/controller/restapi/response"
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/usecase/bank"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type BankController struct {
-	usecase *bank.UseCase
+	usecase  *bank.UseCase
+	validate *validator.Validate
 }
 
-func NewBankController(uc *bank.UseCase) *BankController {
-	return &BankController{usecase: uc}
+func NewBankController(uc *bank.UseCase, vd *validator.Validate) *BankController {
+	return &BankController{usecase: uc, validate: vd}
 }
 
 func (bc *BankController) Registration(w http.ResponseWriter, r *http.Request) {
 	var req request.RegistrationBank
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "error", http.StatusBadRequest)
+		return
+	}
+	if err := bc.validate.Struct(req); err != nil {
 		http.Error(w, "error", http.StatusBadRequest)
 		return
 	}

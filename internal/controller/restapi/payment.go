@@ -10,19 +10,25 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
 
 type PaymentController struct {
-	usecase *payment.UseCase
+	usecase  *payment.UseCase
+	validate *validator.Validate
 }
 
-func NewPaymentController(uc *payment.UseCase) *PaymentController {
-	return &PaymentController{usecase: uc}
+func NewPaymentController(uc *payment.UseCase, vd *validator.Validate) *PaymentController {
+	return &PaymentController{usecase: uc, validate: vd}
 }
 
 func (pc *PaymentController) Create(w http.ResponseWriter, r *http.Request) {
 	var req request.CreatePayment
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "error", http.StatusBadRequest)
+		return
+	}
+	if err := pc.validate.Struct(req); err != nil {
 		http.Error(w, "error", http.StatusBadRequest)
 		return
 	}

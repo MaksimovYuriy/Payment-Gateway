@@ -6,5 +6,5 @@ type RegistrationMerchant struct {
 	WebhookUrl         string `json:"webhook_url" validate:"required"`
 	SuccessRedirectUrl string `json:"success_redirect_url" validate:"required"`
 	FailureRedirectUrl string `json:"failure_redirect_url" validate:"required"`
-	IsActive           bool   `json:"is_active" validate:"required"`
+	IsActive           bool   `json:"is_active"`
 }
