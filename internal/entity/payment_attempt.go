@@ -24,3 +24,7 @@ type PaymentAttempt struct {
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
+
+func (pa *PaymentAttempt) SetStatusProcessing() {
+	pa.Status = PAttemptStatusProcessing
+}

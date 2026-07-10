@@ -21,19 +21,18 @@ func (r *Repo) Create(ctx context.Context, m *entity.Merchant) error {
 	query := `
 		INSERT INTO merchants (name, domain, api_key_hash,
 							   webhook_url, success_redirect_url, 
-							   failure_redirect_url, is_active, 
-							   created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id
+							   failure_redirect_url, is_active)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, created_at, updated_at
 	`
 
 	row := r.database.QueryRowContext(
 		ctx, query, m.Name, m.Domain, m.ApiKeyHash,
 		m.WebhookUrl, m.SuccessRedirectUrl, m.FailureRedirectUrl,
-		m.IsActive, m.CreatedAt, m.UpdatedAt,
+		m.IsActive,
 	)
 
-	if err := row.Scan(&m.Id); err != nil {
+	if err := row.Scan(&m.Id, &m.CreatedAt, &m.UpdatedAt); err != nil {
 		return err
 	}
 	return nil

@@ -35,11 +35,14 @@ var _ usecase.Payment = (*UseCase)(nil)
 func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) (*entity.Payment, error) {
 	var attempt entity.PaymentAttempt
 	err := uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
+		if err := p.Validate(); err != nil {
+			return err
+		}
 		if err := repos.Payment.Create(ctx, p); err != nil {
 			return err
 		}
 
-		p.Status = entity.PaymentStatusProcessing
+		p.SetStatusProcessing()
 		if err := repos.Payment.Update(ctx, p); err != nil {
 			return err
 		}
@@ -51,7 +54,7 @@ func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) 
 		if err := repos.PaymentAttempt.Create(ctx, &attempt); err != nil {
 			return err
 		}
-		attempt.Status = entity.PAttemptStatusProcessing
+		attempt.SetStatusProcessing()
 		return repos.PaymentAttempt.Update(ctx, &attempt)
 	})
 

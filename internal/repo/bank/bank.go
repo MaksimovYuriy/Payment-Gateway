@@ -19,13 +19,13 @@ func NewRepo(db *sql.DB) *Repo {
 
 func (r *Repo) Create(ctx context.Context, b *entity.Bank) error {
 	const query = `
-		INSERT INTO banks (code, name, is_active, created_at, updated_at)
+		INSERT INTO banks (code, name, is_active)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
+		RETURNING id, created_at, updated_at
 	`
 	err := r.database.QueryRowContext(
-		ctx, query, b.Code, b.Name, b.IsActive, b.CreatedAt, b.UpdatedAt,
-	).Scan(&b.Id)
+		ctx, query, b.Code, b.Name, b.IsActive,
+	).Scan(&b.Id, &b.CreatedAt, &b.UpdatedAt)
 	if err != nil {
 		return err
 	}

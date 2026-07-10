@@ -6,7 +6,6 @@ import (
 	"payment_gateway/internal/lib/apikey"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
-	"time"
 )
 
 type UseCase struct {
@@ -20,10 +19,6 @@ func NewUseCase(repo repo.Merchant) *UseCase {
 var _ usecase.Merchant = (*UseCase)(nil)
 
 func (uc *UseCase) Registration(ctx context.Context, m *entity.Merchant) (*entity.Merchant, string, error) {
-	now := time.Now()
-	m.CreatedAt = now
-	m.UpdatedAt = now
-
 	apiKey, err := apikey.GenerateApiKey()
 	if err != nil {
 		return nil, "", err

@@ -5,7 +5,6 @@ import (
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
-	"time"
 )
 
 type UseCase struct {
@@ -21,9 +20,6 @@ func NewUseCase(br repo.Bank) *UseCase {
 }
 
 func (uc *UseCase) Registration(ctx context.Context, br *entity.Bank) (*entity.Bank, error) {
-	now := time.Now()
-	br.CreatedAt = now
-	br.UpdatedAt = now
 	if err := uc.bankRepo.Create(ctx, br); err != nil {
 		return nil, err
 	}
