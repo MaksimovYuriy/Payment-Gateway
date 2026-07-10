@@ -24,7 +24,7 @@ type Payment struct {
 	OrderId       string        `validate:"required"`
 	Amount        string        `validate:"required"`
 	Currency      string        `validate:"required"`
-	Status        PaymentStatus `validate:"required"`
+	Status        PaymentStatus `validate:""`
 	CreatedAt     time.Time     `validate:""`
 	UpdatedAt     time.Time     `validate:""`
 }

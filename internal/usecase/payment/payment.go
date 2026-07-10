@@ -7,6 +7,8 @@ import (
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type UseCase struct {
@@ -14,6 +16,7 @@ type UseCase struct {
 	pAttemptRepo  repo.PaymentAttempt
 	bankProcessor bankprocessor.BankProcessor
 	uow           UnitOfWork
+	validate      *validator.Validate
 }
 
 func NewUseCase(
@@ -21,23 +24,54 @@ func NewUseCase(
 	pAttemptRepo repo.PaymentAttempt,
 	bankProcessor bankprocessor.BankProcessor,
 	uow UnitOfWork,
+	vd *validator.Validate,
 ) *UseCase {
 	return &UseCase{
 		paymentRepo:   paymentRepo,
 		pAttemptRepo:  pAttemptRepo,
 		bankProcessor: bankProcessor,
 		uow:           uow,
+		validate:      vd,
 	}
 }
 
 var _ usecase.Payment = (*UseCase)(nil)
 
 func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) (*entity.Payment, error) {
+	if err := uc.validateCreatePayment(p); err != nil {
+		return nil, err
+	}
+
 	var attempt entity.PaymentAttempt
-	err := uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
-		if err := p.Validate(); err != nil {
-			return err
-		}
+	if err := uc.createProcessingAttempt(ctx, p, bankId, &attempt); err != nil {
+		return nil, err
+	}
+
+	if err := uc.processPayment(ctx, p, &attempt, bankId); err != nil {
+		return nil, err
+	}
+
+	if err := uc.savePaymentResult(ctx, p, &attempt); err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
+func (uc *UseCase) validateCreatePayment(p *entity.Payment) error {
+	if err := p.Validate(); err != nil {
+		return err
+	}
+	return uc.validate.Struct(p)
+}
+
+func (uc *UseCase) createProcessingAttempt(
+	ctx context.Context,
+	p *entity.Payment,
+	bankId int64,
+	attempt *entity.PaymentAttempt,
+) error {
+	return uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
 		if err := repos.Payment.Create(ctx, p); err != nil {
 			return err
 		}
@@ -47,21 +81,29 @@ func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) 
 			return err
 		}
 
-		attempt = entity.PaymentAttempt{
+		*attempt = entity.PaymentAttempt{
 			PaymentId: p.Id,
 			BankId:    bankId,
 		}
-		if err := repos.PaymentAttempt.Create(ctx, &attempt); err != nil {
+		if err := uc.validate.Struct(attempt); err != nil {
 			return err
 		}
+
+		if err := repos.PaymentAttempt.Create(ctx, attempt); err != nil {
+			return err
+		}
+
 		attempt.SetStatusProcessing()
-		return repos.PaymentAttempt.Update(ctx, &attempt)
+		return repos.PaymentAttempt.Update(ctx, attempt)
 	})
+}
 
-	if err != nil {
-		return nil, err
-	}
-
+func (uc *UseCase) processPayment(
+	ctx context.Context,
+	p *entity.Payment,
+	attempt *entity.PaymentAttempt,
+	bankId int64,
+) error {
 	processCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -72,27 +114,30 @@ func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) 
 
 	select {
 	case result := <-resultCh:
-		uc.applyBankResult(p, &attempt, bankId, result)
+		uc.applyBankResult(p, attempt, bankId, result)
 	case <-time.After(5 * time.Second):
 		cancel()
 		attempt.Status = entity.PAttemptStatusTimeout
 		p.Status = entity.PaymentStatusFailed
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return ctx.Err()
 	}
 
-	err = uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
-		if err := repos.PaymentAttempt.Update(ctx, &attempt); err != nil {
+	return nil
+}
+
+func (uc *UseCase) savePaymentResult(
+	ctx context.Context,
+	p *entity.Payment,
+	attempt *entity.PaymentAttempt,
+) error {
+	return uc.uow.Do(ctx, func(ctx context.Context, repos Repositories) error {
+		if err := repos.PaymentAttempt.Update(ctx, attempt); err != nil {
 			return err
 		}
 
 		return repos.Payment.Update(ctx, p)
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return p, nil
 }
 
 func (uc *UseCase) GetById(ctx context.Context, id int64) (*entity.Payment, error) {

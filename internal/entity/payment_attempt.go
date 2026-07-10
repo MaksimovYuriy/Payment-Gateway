@@ -17,7 +17,7 @@ type PaymentAttempt struct {
 	Id                int64          `validate:""`
 	PaymentId         int64          `validate:"required"`
 	BankId            int64          `validate:"required"`
-	Status            PAttemptStatus `validate:"required"`
+	Status            PAttemptStatus `validate:""`
 	ExternalPaymentId *string        `validate:"omitempty"`
 	ErrorMessage      *string        `validate:"omitempty"`
 	ErrorCode         *string        `validate:"omitempty"`

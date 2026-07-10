@@ -5,21 +5,28 @@ import (
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type UseCase struct {
 	bankRepo repo.Bank
+	validate *validator.Validate
 }
 
 var _ usecase.Bank = (*UseCase)(nil)
 
-func NewUseCase(br repo.Bank) *UseCase {
+func NewUseCase(br repo.Bank, vd *validator.Validate) *UseCase {
 	return &UseCase{
 		bankRepo: br,
+		validate: vd,
 	}
 }
 
 func (uc *UseCase) Registration(ctx context.Context, br *entity.Bank) (*entity.Bank, error) {
+	if err := uc.validate.Struct(br); err != nil {
+		return nil, err
+	}
 	if err := uc.bankRepo.Create(ctx, br); err != nil {
 		return nil, err
 	}
