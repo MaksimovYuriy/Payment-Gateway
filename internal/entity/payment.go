@@ -18,15 +18,15 @@ const (
 )
 
 type Payment struct {
-	Id            int64
-	MerchantId    int64
-	SuccessBankId *int64
-	OrderId       string
-	Amount        string
-	Currency      string
-	Status        PaymentStatus
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	Id            int64         `validate:""`
+	MerchantId    int64         `validate:"required"`
+	SuccessBankId *int64        `validate:""`
+	OrderId       string        `validate:"required"`
+	Amount        string        `validate:"required"`
+	Currency      string        `validate:"required"`
+	Status        PaymentStatus `validate:"required"`
+	CreatedAt     time.Time     `validate:""`
+	UpdatedAt     time.Time     `validate:""`
 }
 
 func (p *Payment) Validate() error {

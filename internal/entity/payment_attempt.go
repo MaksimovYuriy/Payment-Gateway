@@ -14,15 +14,15 @@ const (
 )
 
 type PaymentAttempt struct {
-	Id                int64
-	PaymentId         int64
-	BankId            int64
-	Status            PAttemptStatus
-	ExternalPaymentId *string
-	ErrorMessage      *string
-	ErrorCode         *string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	Id                int64          `validate:""`
+	PaymentId         int64          `validate:"required"`
+	BankId            int64          `validate:"required"`
+	Status            PAttemptStatus `validate:"required"`
+	ExternalPaymentId *string        `validate:"omitempty"`
+	ErrorMessage      *string        `validate:"omitempty"`
+	ErrorCode         *string        `validate:"omitempty"`
+	CreatedAt         time.Time      `validate:""`
+	UpdatedAt         time.Time      `validate:""`
 }
 
 func (pa *PaymentAttempt) SetStatusProcessing() {
