@@ -9,6 +9,13 @@ const (
 	CodeInternal      = "internal_error"
 )
 
+const (
+	MessageInvalidInput  = "invalid input"
+	MessageNotFound      = "not found"
+	MessageAlreadyExists = "already exists"
+	MessageInternal      = "internal server error"
+)
+
 type Error struct {
 	Code    Code
 	Message string
@@ -17,7 +24,7 @@ type Error struct {
 
 func (e *Error) Error() string {
 	if e.Err != nil {
-		return e.Message + ":" + e.Err.Error()
+		return e.Message + ": " + e.Err.Error()
 	}
 	return e.Message
 }

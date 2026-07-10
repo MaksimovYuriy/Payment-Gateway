@@ -6,6 +6,7 @@ import (
 	"payment_gateway/internal/controller/restapi/request"
 	"payment_gateway/internal/controller/restapi/response"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/usecase/merchant"
 
 	"github.com/go-playground/validator/v10"
@@ -23,11 +24,11 @@ func NewMerchantController(uc *merchant.UseCase, vd *validator.Validate) *Mercha
 func (mc *MerchantController) Registration(w http.ResponseWriter, r *http.Request) {
 	var req request.RegistrationMerchant
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, apperr.InvalidInput(apperr.MessageInvalidInput))
 		return
 	}
 	if err := mc.validate.Struct(req); err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, apperr.InvalidInput(apperr.MessageInvalidInput))
 		return
 	}
 
@@ -42,23 +43,23 @@ func (mc *MerchantController) Registration(w http.ResponseWriter, r *http.Reques
 
 	merchant, apiKey, err := mc.usecase.Registration(r.Context(), &merchant_entity)
 	if err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response.NewMerchantRegistration(*merchant, apiKey))
+	_ = json.NewEncoder(w).Encode(response.NewMerchantRegistration(*merchant, apiKey))
 }
 
 func (mc *MerchantController) List(w http.ResponseWriter, r *http.Request) {
 	merchants, err := mc.usecase.List(r.Context())
 	if err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response.NewListMerchant(merchants))
+	_ = json.NewEncoder(w).Encode(response.NewListMerchant(merchants))
 }

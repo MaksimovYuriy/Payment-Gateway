@@ -6,6 +6,7 @@ import (
 	"payment_gateway/internal/controller/restapi/request"
 	"payment_gateway/internal/controller/restapi/response"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/usecase/payment"
 	"strconv"
 
@@ -25,11 +26,11 @@ func NewPaymentController(uc *payment.UseCase, vd *validator.Validate) *PaymentC
 func (pc *PaymentController) Create(w http.ResponseWriter, r *http.Request) {
 	var req request.CreatePayment
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, apperr.InvalidInput(apperr.MessageInvalidInput))
 		return
 	}
 	if err := pc.validate.Struct(req); err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, apperr.InvalidInput(apperr.MessageInvalidInput))
 		return
 	}
 
@@ -42,41 +43,41 @@ func (pc *PaymentController) Create(w http.ResponseWriter, r *http.Request) {
 
 	payment, err := pc.usecase.Create(r.Context(), &paymentEntity, req.BankId)
 	if err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response.NewPayment(*payment))
+	_ = json.NewEncoder(w).Encode(response.NewPayment(*payment))
 }
 
 func (pc *PaymentController) GetById(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, apperr.InvalidInput(apperr.MessageInvalidInput))
 		return
 	}
 
 	payment, err := pc.usecase.GetById(r.Context(), id)
 	if err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response.NewPayment(*payment))
+	_ = json.NewEncoder(w).Encode(response.NewPayment(*payment))
 }
 
 func (pc *PaymentController) List(w http.ResponseWriter, r *http.Request) {
 	payments, err := pc.usecase.List(r.Context())
 	if err != nil {
-		http.Error(w, "error", http.StatusBadRequest)
+		WriteError(w, err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response.NewListPayment(payments))
+	_ = json.NewEncoder(w).Encode(response.NewListPayment(payments))
 }

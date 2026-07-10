@@ -22,7 +22,7 @@ func WriteError(w http.ResponseWriter, err error) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(response.NewErrorResponse(errorCode, message))
+	_ = json.NewEncoder(w).Encode(response.NewErrorResponse(errorCode, message))
 }
 
 func statusByAppCode(code apperr.Code) int {
