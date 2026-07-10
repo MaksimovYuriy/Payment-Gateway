@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"fmt"
+	"payment_gateway/internal/lib/apperr"
 	"strconv"
 	"strings"
 	"time"
@@ -32,13 +32,13 @@ type Payment struct {
 func (p *Payment) Validate() error {
 	amount, err := strconv.ParseFloat(p.Amount, 64)
 	if err != nil || amount <= 0 {
-		return fmt.Errorf("Incorrect amount")
+		return apperr.InvalidInput("incorrect amount")
 	}
 	if strings.TrimSpace(p.OrderId) == "" {
-		return fmt.Errorf("Incorrect order id")
+		return apperr.InvalidInput("incorrect order id")
 	}
 	if len(p.Currency) != 3 {
-		return fmt.Errorf("Incorrect currency")
+		return apperr.InvalidInput("incorrect currency")
 	}
 	return nil
 }

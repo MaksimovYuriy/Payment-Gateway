@@ -4,6 +4,7 @@ import (
 	"context"
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/lib/apikey"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
 
@@ -24,14 +25,14 @@ var _ usecase.Merchant = (*UseCase)(nil)
 func (uc *UseCase) Registration(ctx context.Context, m *entity.Merchant) (*entity.Merchant, string, error) {
 	apiKey, err := apikey.GenerateApiKey()
 	if err != nil {
-		return nil, "", err
+		return nil, "", apperr.Internal("failed to generate api key", err)
 	}
 	m.ApiKeyHash, err = apikey.HashApiKey(apiKey)
 	if err != nil {
-		return nil, "", err
+		return nil, "", apperr.Internal("failed to hash api key", err)
 	}
 	if err := uc.validate.Struct(m); err != nil {
-		return nil, "", err
+		return nil, "", apperr.InvalidInput(apperr.MessageInvalidInput)
 	}
 	if err := uc.merchantRepo.Create(ctx, m); err != nil {
 		return nil, "", err

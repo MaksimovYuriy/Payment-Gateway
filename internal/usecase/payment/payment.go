@@ -3,6 +3,7 @@ package payment
 import (
 	"context"
 	"payment_gateway/internal/entity"
+	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/lib/bankprocessor"
 	"payment_gateway/internal/repo"
 	"payment_gateway/internal/usecase"
@@ -62,7 +63,10 @@ func (uc *UseCase) validateCreatePayment(p *entity.Payment) error {
 	if err := p.Validate(); err != nil {
 		return err
 	}
-	return uc.validate.Struct(p)
+	if err := uc.validate.Struct(p); err != nil {
+		return apperr.InvalidInput(apperr.MessageInvalidInput)
+	}
+	return nil
 }
 
 func (uc *UseCase) createProcessingAttempt(
@@ -86,7 +90,7 @@ func (uc *UseCase) createProcessingAttempt(
 			BankId:    bankId,
 		}
 		if err := uc.validate.Struct(attempt); err != nil {
-			return err
+			return apperr.InvalidInput(apperr.MessageInvalidInput)
 		}
 
 		if err := repos.PaymentAttempt.Create(ctx, attempt); err != nil {
