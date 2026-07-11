@@ -15,6 +15,8 @@ import (
 type UseCase struct {
 	paymentRepo   repo.Payment
 	pAttemptRepo  repo.PaymentAttempt
+	bankRepo      repo.Bank
+	merchantRepo  repo.Merchant
 	bankProcessor bankprocessor.BankProcessor
 	uow           UnitOfWork
 	validate      *validator.Validate
@@ -23,6 +25,8 @@ type UseCase struct {
 func NewUseCase(
 	paymentRepo repo.Payment,
 	pAttemptRepo repo.PaymentAttempt,
+	bankRepo repo.Bank,
+	merchantRepo repo.Merchant,
 	bankProcessor bankprocessor.BankProcessor,
 	uow UnitOfWork,
 	vd *validator.Validate,
@@ -30,6 +34,8 @@ func NewUseCase(
 	return &UseCase{
 		paymentRepo:   paymentRepo,
 		pAttemptRepo:  pAttemptRepo,
+		bankRepo:      bankRepo,
+		merchantRepo:  merchantRepo,
 		bankProcessor: bankProcessor,
 		uow:           uow,
 		validate:      vd,
@@ -40,6 +46,9 @@ var _ usecase.Payment = (*UseCase)(nil)
 
 func (uc *UseCase) Create(ctx context.Context, p *entity.Payment, bankId int64) (*entity.Payment, error) {
 	if err := uc.validateCreatePayment(p); err != nil {
+		return nil, err
+	}
+	if err := uc.validateBankAndMerchant(ctx, bankId, p.MerchantId); err != nil {
 		return nil, err
 	}
 
@@ -65,6 +74,24 @@ func (uc *UseCase) validateCreatePayment(p *entity.Payment) error {
 	}
 	if err := uc.validate.Struct(p); err != nil {
 		return apperr.InvalidInput(apperr.MessageInvalidInput)
+	}
+	return nil
+}
+
+func (uc *UseCase) validateBankAndMerchant(ctx context.Context, bankId, merchantId int64) error {
+	bank, err := uc.bankRepo.GetById(ctx, bankId)
+	if err != nil {
+		return err
+	}
+	if !bank.IsActive {
+		return apperr.InvalidInput("bank is inactive")
+	}
+	merch, err := uc.merchantRepo.GetById(ctx, merchantId)
+	if err != nil {
+		return err
+	}
+	if !merch.IsActive {
+		return apperr.InvalidInput("merchant is incative")
 	}
 	return nil
 }

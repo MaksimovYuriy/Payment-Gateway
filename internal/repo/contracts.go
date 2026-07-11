@@ -9,11 +9,13 @@ type (
 	Bank interface {
 		Create(ctx context.Context, b *entity.Bank) error
 		List(ctx context.Context) ([]*entity.Bank, error)
+		GetById(ctx context.Context, id int64) (*entity.Bank, error)
 	}
 
 	Merchant interface {
 		Create(ctx context.Context, m *entity.Merchant) error
 		List(ctx context.Context) ([]*entity.Merchant, error)
+		GetById(ctx context.Context, id int64) (*entity.Merchant, error)
 	}
 
 	Payment interface {

@@ -57,7 +57,15 @@ func Run() error {
 
 	bankUseCase := bankusecase.NewUseCase(bankRepo, validate)
 	merchUseCase := merchusecase.NewUseCase(merchRepo, validate)
-	paymentUseCase := paymentusecase.NewUseCase(paymentRepo, pAttemptRepo, bankProcessor, paymentUOW, validate)
+	paymentUseCase := paymentusecase.NewUseCase(
+		paymentRepo,
+		pAttemptRepo,
+		bankRepo,
+		merchRepo,
+		bankProcessor,
+		paymentUOW,
+		validate,
+	)
 
 	bankController := restapi.NewBankController(bankUseCase, validate)
 	merchController := restapi.NewMerchantController(merchUseCase, validate)

@@ -3,6 +3,7 @@ package merchant
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
@@ -80,4 +81,36 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Merchant, error) {
 		return nil, apperr.Internal("failed to iterate merchants", err)
 	}
 	return merchants, nil
+}
+
+func (r *Repo) GetById(ctx context.Context, id int64) (*entity.Merchant, error) {
+	const query = `
+		SELECT id, name, domain, webhook_url,
+			   success_redirect_url,
+			   failure_redirect_url, is_active,
+			   created_at, updated_at
+		FROM merchants
+		WHERE id = $1
+	`
+	row := r.database.QueryRowContext(ctx, query, id)
+
+	var merchant entity.Merchant
+	if err := row.Scan(
+		&merchant.Id,
+		&merchant.Name,
+		&merchant.Domain,
+		&merchant.WebhookUrl,
+		&merchant.SuccessRedirectUrl,
+		&merchant.FailureRedirectUrl,
+		&merchant.IsActive,
+		&merchant.CreatedAt,
+		&merchant.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperr.NotFound("merchant not found")
+		}
+		return nil, apperr.Internal("failed to get merchant", err)
+	}
+
+	return &merchant, nil
 }

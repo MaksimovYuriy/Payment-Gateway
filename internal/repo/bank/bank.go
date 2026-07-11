@@ -3,6 +3,7 @@ package bank
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"payment_gateway/internal/entity"
 	"payment_gateway/internal/lib/apperr"
 	"payment_gateway/internal/repo"
@@ -66,4 +67,28 @@ func (r *Repo) List(ctx context.Context) ([]*entity.Bank, error) {
 		return nil, apperr.Internal("failed to iterate banks", err)
 	}
 	return banks, nil
+}
+
+func (r *Repo) GetById(ctx context.Context, id int64) (*entity.Bank, error) {
+	const query = `
+		SELECT id, code, name, is_active, created_at, updated_at
+		FROM banks
+		WHERE id = $1
+	`
+	row := r.database.QueryRowContext(ctx, query, id)
+	var bank entity.Bank
+	if err := row.Scan(
+		&bank.Id,
+		&bank.Code,
+		&bank.Name,
+		&bank.IsActive,
+		&bank.CreatedAt,
+		&bank.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apperr.NotFound("bank not found")
+		}
+		return nil, apperr.Internal("failed to get bank", err)
+	}
+	return &bank, nil
 }
