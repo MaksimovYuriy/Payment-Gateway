@@ -91,7 +91,7 @@ func (uc *UseCase) validateBankAndMerchant(ctx context.Context, bankId, merchant
 		return err
 	}
 	if !merch.IsActive {
-		return apperr.InvalidInput("merchant is incative")
+		return apperr.InvalidInput("merchant is inactive")
 	}
 	return nil
 }
